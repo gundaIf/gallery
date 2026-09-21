@@ -1,1 +1,179 @@
-SEE_FILE
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exhibit ✤︎ Deen David</title>
+<meta name="description" content="Playing around with GenAI art tools.">
+<link rel="canonical" href="https://gallery.deeeen.xyz/">
+<link rel="icon" href="https://cdn.blot.im/blog_e9e46454a86f4b50aded8710a3e59817/_avatars/c5a1db36-3051-4d3e-b5da-bb6bf31b219d.jpg" type="image/x-icon">
+<script>
+(function () {
+  var root = document.documentElement;
+  try {
+    var t = localStorage.getItem("theme");
+    var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    root.setAttribute("data-theme", t || (prefersDark ? "dark" : "light"));
+  } catch (e) { root.setAttribute("data-theme", "light"); }
+})();
+</script>
+<style>
+:root{--text:#2a2722;--text-rgb:42,39,34;--bg:#f5f1e9;--accent:#b0673a;--gap:10px;--pad:30px;color-scheme:light}
+[data-theme=dark]{--text:#d9d4ca;--text-rgb:217,212,202;--bg:#15161b;--accent:#d89a5c;color-scheme:dark}
+*{box-sizing:border-box}html,body{height:100%}html{font-family:Helvetica,"Helvetica Neue",Arial,sans-serif;font-size:15px;line-height:1.6}body{margin:0;color:var(--text);background:var(--bg);overflow:hidden;transition:background-color .25s ease,color .25s ease}a{color:inherit;text-decoration:none}a:hover{color:var(--accent)}
+.site-header{display:flex;align-items:center;justify-content:space-between;gap:1em;padding:var(--pad) var(--pad) 0}
+.site-title{font-size:calc(15px * .6667);font-weight:400;margin:0;letter-spacing:.1em;text-transform:uppercase}
+.site-header-actions{display:flex;align-items:center;gap:14px}
+.home-btn{display:inline-flex;align-items:center;justify-content:center;width:1.75em;height:1.75em;padding:0;border:0;background:none;color:inherit;cursor:pointer}
+.home-btn svg{display:block;width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.25;stroke-linejoin:round;stroke-linecap:round}
+.home-btn:hover{color:var(--accent)}
+.theme-toggle{background:none;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:center;font-size:calc(15px * .6667)}
+.theme-toggle-track{position:relative;width:1.75em;height:.875em;border:1px solid rgba(var(--text-rgb),.35);border-radius:999px}
+.theme-toggle-thumb{position:absolute;top:50%;left:.125em;width:.5em;height:.5em;border-radius:50%;background:rgba(var(--text-rgb),.5);transform:translateY(-50%);transition:left .2s ease}
+[data-theme=dark] .theme-toggle-thumb{left:calc(100% - .625em);background:rgba(var(--text-rgb),.9)}
+.stage{height:calc(100dvh - 4.6em);display:flex;flex-direction:column;gap:var(--gap);padding:18px var(--pad) var(--pad);min-height:0}
+.reel{flex:1 1 0;min-height:0;overflow:hidden;position:relative}
+.track{display:flex;align-items:stretch;gap:var(--gap);height:100%;width:max-content;will-change:transform;animation:drift var(--dur,90s) linear infinite;animation-direction:var(--dir,normal)}
+.reel:hover .track,.reel.is-paused .track{animation-play-state:paused}
+.card{height:100%;flex:0 0 auto;padding:0;border:0;margin:0;background:rgba(var(--text-rgb),.06);cursor:zoom-in;overflow:hidden}
+.card img{display:block;height:100%;width:auto;max-width:none;opacity:0;transition:opacity .45s ease}
+.card img.on{opacity:1}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.status{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(var(--text-rgb),.4);pointer-events:none}
+.lb{position:fixed;inset:0;background:rgba(21,22,27,.92);z-index:20;display:none;align-items:center;justify-content:center;padding:2em}
+.lb.on{display:flex}.lb img{max-width:min(94vw,1500px);max-height:90vh;object-fit:contain}
+.lb-meta{position:absolute;left:2em;bottom:1.4em;color:#f2f2f2;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.lb-x,.lb-prev,.lb-next{position:absolute;background:none;border:0;color:#f2f2f2;cursor:pointer;font-family:Helvetica,"Helvetica Neue",Arial,sans-serif;font-size:28px;line-height:1;padding:8px}
+.lb-x{top:1em;right:1.2em}.lb-prev{left:.4em;top:50%;transform:translateY(-50%)}.lb-next{right:.4em;top:50%;transform:translateY(-50%)}
+@media (max-width:799px){:root{--pad:18px;--gap:7px}}
+@media (prefers-reduced-motion:reduce){.track{animation:none}.reel{overflow-x:auto}}
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <h1 class="site-title"><a href="https://deeeen.xyz/">～への入り口 ✴︎ Deen David</a></h1>
+    <div class="site-header-actions">
+      <a class="home-btn" href="https://deeeen.xyz/" aria-label="Home, deeeen.xyz" title="Home">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 8.1 L8 2.8 L13.8 8.1"/><path d="M4 7.4 V13.2 H12 V7.4"/></svg>
+      </a>
+      <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode"><span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span></button>
+    </div>
+  </header>
+  <main class="stage" id="stage" aria-label="Exhibit">
+    <div class="reel" data-dur="92s" data-dir="normal"></div>
+    <div class="reel" data-dur="118s" data-dir="reverse"></div>
+    <div class="reel" data-dur="104s" data-dir="normal"></div>
+  </main>
+  <p class="status" id="status">Looking…</p>
+  <div class="lb" id="lb" hidden>
+    <button class="lb-x" id="lbx" aria-label="Close">×</button>
+    <button class="lb-prev" id="lbp" aria-label="Previous">‹</button>
+    <img id="lbi" alt="">
+    <button class="lb-next" id="lbn" aria-label="Next">›</button>
+    <div class="lb-meta" id="lbm"></div>
+  </div>
+<script>
+"use strict";
+(function () {
+  var btn = document.getElementById("theme-toggle");
+  if (!btn) return;
+  btn.addEventListener("click", function () {
+    var current = document.documentElement.getAttribute("data-theme");
+    var next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+  });
+})();
+const SLUG = "gallery-exhibit-yju3zyufzso";
+const PER = 48;
+const GENERIC = /^(image|untitled|img|photo|picture)$/i;
+const reels = Array.from(document.querySelectorAll(".reel"));
+const statusEl = document.getElementById("status");
+const lb = document.getElementById("lb");
+const lbi = document.getElementById("lbi");
+const lbm = document.getElementById("lbm");
+const items = [];
+let openAt = -1;
+function prettyTitle(t){
+  if (!t) return "";
+  t = String(t).replace(/\.(jpe?g|png|gif|webp|heic)$/i, "").trim();
+  if (!t || GENERIC.test(t)) return "";
+  return t.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+}
+function srcOf(block, size){
+  const img = block.image || {};
+  if (size === "large") return (img.large && img.large.src) || img.src || "";
+  return (img.medium && img.medium.src) || (img.small && img.small.src) || img.src || "";
+}
+function cardFor(entry){
+  const b = document.createElement("button");
+  b.className = "card"; b.type = "button";
+  b.setAttribute("aria-label", entry.title || "Work");
+  const ratio = Math.max(0.62, Math.min(1.85, (entry.w || 3) / (entry.h || 4)));
+  b.style.aspectRatio = String(ratio);
+  const img = document.createElement("img");
+  img.loading = "lazy"; img.decoding = "async"; img.alt = entry.title || ""; img.src = entry.thumb;
+  img.addEventListener("load", () => img.classList.add("on"));
+  b.appendChild(img);
+  b.addEventListener("click", () => open(entry.i));
+  return b;
+}
+function fillReel(reel, slice){
+  const track = document.createElement("div");
+  track.className = "track";
+  track.style.setProperty("--dur", reel.dataset.dur || "90s");
+  track.style.setProperty("--dir", reel.dataset.dir || "normal");
+  const make = () => slice.forEach((entry) => track.appendChild(cardFor(entry)));
+  make(); make();
+  reel.innerHTML = ""; reel.appendChild(track);
+}
+function split(list, n){
+  const bags = Array.from({ length: n }, () => []);
+  list.forEach((item, i) => bags[i % n].push(item));
+  return bags;
+}
+async function loadAll(){
+  let page = 1, more = true;
+  statusEl.textContent = "Gathering works…";
+  try {
+    while (more) {
+      const res = await fetch("https://api.are.na/v3/channels/" + SLUG + "/contents?page=" + page + "&per=" + PER);
+      if (!res.ok) throw new Error("Are.na " + res.status);
+      const json = await res.json();
+      (json.data || []).forEach((block) => {
+        if (block.type !== "Image" || !block.image) return;
+        items.push({ i: items.length, id: block.id, title: prettyTitle(block.title), thumb: srcOf(block, "medium"), large: srcOf(block, "large"), w: block.image.width || 3, h: block.image.height || 4 });
+      });
+      more = !!(json.meta && json.meta.has_more_pages && (json.data || []).length);
+      page += 1;
+    }
+    const bags = split(items, reels.length);
+    reels.forEach((reel, i) => fillReel(reel, bags[i].length ? bags[i] : items));
+    statusEl.textContent = "";
+  } catch (err) {
+    statusEl.textContent = "Could not reach Are.na. Try again in a moment.";
+    console.error(err);
+  }
+}
+function open(i){
+  if (i < 0 || i >= items.length) return;
+  openAt = i; const it = items[i];
+  lbi.src = it.large || it.thumb; lbi.alt = it.title || "";
+  lbm.innerHTML = (it.title ? it.title + " · " : "") + "<a href=\"https://www.are.na/block/" + it.id + "\" target=\"_blank\" rel=\"noopener\">on are.na</a>";
+  lb.hidden = false; lb.classList.add("on"); document.body.style.overflow = "hidden";
+}
+function close(){ lb.classList.remove("on"); lb.hidden = true; lbi.src = ""; openAt = -1; }
+document.getElementById("lbx").addEventListener("click", close);
+document.getElementById("lbp").addEventListener("click", () => open(openAt - 1));
+document.getElementById("lbn").addEventListener("click", () => open(openAt + 1));
+lb.addEventListener("click", (e) => { if (e.target === lb) close(); });
+document.addEventListener("keydown", (e) => {
+  if (!lb.classList.contains("on")) return;
+  if (e.key === "Escape") close();
+  if (e.key === "ArrowLeft") open(openAt - 1);
+  if (e.key === "ArrowRight") open(openAt + 1);
+});
+loadAll();
+</script>
+</body>
+</html>
