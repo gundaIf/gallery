@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Exhibit ✤︎ Deen David</title>
+<title>Exhibit ✝︎ Deen David</title>
 <meta name="description" content="Playing around with GenAI art tools.">
 <link rel="canonical" href="https://gallery.deeeen.xyz/">
 <link rel="icon" href="https://cdn.blot.im/blog_e9e46454a86f4b50aded8710a3e59817/_avatars/c5a1db36-3051-4d3e-b5da-bb6bf31b219d.jpg" type="image/x-icon">
@@ -35,13 +35,17 @@
 .reel{flex:1 1 0;min-height:0;overflow:hidden;position:relative}
 .track{display:flex;align-items:stretch;gap:var(--gap);height:100%;width:max-content;will-change:transform;animation:drift var(--dur,90s) linear infinite;animation-direction:var(--dir,normal)}
 .reel:hover .track,.reel.is-paused .track{animation-play-state:paused}
-.card{height:100%;flex:0 0 auto;padding:0;border:0;margin:0;background:rgba(var(--text-rgb),.06);cursor:zoom-in;overflow:hidden}
+.card{height:100%;flex:0 0 auto;padding:0;border:0;margin:0;background:rgba(var(--text-rgb),.06);cursor:zoom-in;overflow:hidden;position:relative}
 .card img{display:block;height:100%;width:auto;max-width:none;opacity:0;transition:opacity .45s ease}
 .card img.on{opacity:1}
+.card.is-video::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%, transparent 40%, rgba(0,0,0,.15) 100%);pointer-events:none}
+.card.is-video::before{content:"▶";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font-size:18px;opacity:.7;pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,.5)}
 @keyframes drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .status{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(var(--text-rgb),.4);pointer-events:none}
 .lb{position:fixed;inset:0;background:rgba(21,22,27,.92);z-index:20;display:none;align-items:center;justify-content:center;padding:2em}
-.lb.on{display:flex}.lb img{max-width:min(94vw,1500px);max-height:90vh;object-fit:contain}
+.lb.on{display:flex}
+.lb img,.lb video{max-width:min(94vw,1500px);max-height:90vh;object-fit:contain}
+.lb video{background:#000}
 .lb-meta{position:absolute;left:2em;bottom:1.4em;color:#f2f2f2;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
 .lb-x,.lb-prev,.lb-next{position:absolute;background:none;border:0;color:#f2f2f2;cursor:pointer;font-family:Helvetica,"Helvetica Neue",Arial,sans-serif;font-size:28px;line-height:1;padding:8px}
 .lb-x{top:1em;right:1.2em}.lb-prev{left:.4em;top:50%;transform:translateY(-50%)}.lb-next{right:.4em;top:50%;transform:translateY(-50%)}
@@ -69,6 +73,7 @@
     <button class="lb-x" id="lbx" aria-label="Close">×</button>
     <button class="lb-prev" id="lbp" aria-label="Previous">‹</button>
     <img id="lbi" alt="">
+    <video id="lbv" controls playsinline preload="metadata" style="display:none"></video>
     <button class="lb-next" id="lbn" aria-label="Next">›</button>
     <div class="lb-meta" id="lbm"></div>
   </div>
@@ -91,12 +96,13 @@ const reels = Array.from(document.querySelectorAll(".reel"));
 const statusEl = document.getElementById("status");
 const lb = document.getElementById("lb");
 const lbi = document.getElementById("lbi");
+const lbv = document.getElementById("lbv");
 const lbm = document.getElementById("lbm");
 const items = [];
 let openAt = -1;
 function prettyTitle(t){
   if (!t) return "";
-  t = String(t).replace(/\.(jpe?g|png|gif|webp|heic)$/i, "").trim();
+  t = String(t).replace(/\.(jpe?g|png|gif|webp|heic|mp4|webm|mov)$/i, "").trim();
   if (!t || GENERIC.test(t)) return "";
   return t.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -105,9 +111,18 @@ function srcOf(block, size){
   if (size === "large") return (img.large && img.large.src) || img.src || "";
   return (img.medium && img.medium.src) || (img.small && img.small.src) || img.src || "";
 }
+function isVideo(block){
+  if (block.type === "Attachment" && block.attachment) {
+    const ct = (block.attachment.content_type || "").toLowerCase();
+    const ext = (block.attachment.file_extension || "").toLowerCase();
+    return ct.startsWith("video/") || ["mp4","webm","mov","m4v"].includes(ext);
+  }
+  return false;
+}
 function cardFor(entry){
   const b = document.createElement("button");
-  b.className = "card"; b.type = "button";
+  b.className = "card" + (entry.video ? " is-video" : "");
+  b.type = "button";
   b.setAttribute("aria-label", entry.title || "Work");
   const ratio = Math.max(0.62, Math.min(1.85, (entry.w || 3) / (entry.h || 4)));
   b.style.aspectRatio = String(ratio);
@@ -141,8 +156,19 @@ async function loadAll(){
       if (!res.ok) throw new Error("Are.na " + res.status);
       const json = await res.json();
       (json.data || []).forEach((block) => {
-        if (block.type !== "Image" || !block.image) return;
-        items.push({ i: items.length, id: block.id, title: prettyTitle(block.title), thumb: srcOf(block, "medium"), large: srcOf(block, "large"), w: block.image.width || 3, h: block.image.height || 4 });
+        const video = isVideo(block);
+        if (!video && (block.type !== "Image" || !block.image)) return;
+        if (!block.image) return;
+        items.push({
+          i: items.length,
+          id: block.id,
+          title: prettyTitle(block.title),
+          thumb: srcOf(block, "medium"),
+          large: srcOf(block, "large"),
+          w: (block.image && block.image.width) || 3,
+          h: (block.image && block.image.height) || 4,
+          video: video ? (block.attachment && block.attachment.url) : null
+        });
       });
       more = !!(json.meta && json.meta.has_more_pages && (json.data || []).length);
       page += 1;
@@ -158,11 +184,29 @@ async function loadAll(){
 function open(i){
   if (i < 0 || i >= items.length) return;
   openAt = i; const it = items[i];
-  lbi.src = it.large || it.thumb; lbi.alt = it.title || "";
+  if (it.video) {
+    lbi.style.display = "none";
+    lbv.style.display = "block";
+    lbv.src = it.video;
+    lbv.poster = it.large || it.thumb;
+    lbv.play().catch(() => {});
+  } else {
+    lbv.style.display = "none";
+    lbv.pause();
+    lbv.removeAttribute("src");
+    lbi.style.display = "block";
+    lbi.src = it.large || it.thumb;
+    lbi.alt = it.title || "";
+  }
   lbm.innerHTML = (it.title ? it.title + " · " : "") + "<a href=\"https://www.are.na/block/" + it.id + "\" target=\"_blank\" rel=\"noopener\">on are.na</a>";
   lb.hidden = false; lb.classList.add("on"); document.body.style.overflow = "hidden";
 }
-function close(){ lb.classList.remove("on"); lb.hidden = true; lbi.src = ""; openAt = -1; }
+function close(){
+  lb.classList.remove("on"); lb.hidden = true;
+  lbi.src = "";
+  lbv.pause(); lbv.removeAttribute("src"); lbv.style.display = "none";
+  openAt = -1;
+}
 document.getElementById("lbx").addEventListener("click", close);
 document.getElementById("lbp").addEventListener("click", () => open(openAt - 1));
 document.getElementById("lbn").addEventListener("click", () => open(openAt + 1));
