@@ -36,10 +36,8 @@
 .track{display:flex;align-items:stretch;gap:var(--gap);height:100%;width:max-content;will-change:transform;animation:drift var(--dur,90s) linear infinite;animation-direction:var(--dir,normal)}
 .reel:hover .track,.reel.is-paused .track{animation-play-state:paused}
 .card{height:100%;flex:0 0 auto;padding:0;border:0;margin:0;background:rgba(var(--text-rgb),.06);cursor:zoom-in;overflow:hidden;position:relative}
-.card img{display:block;height:100%;width:auto;max-width:none;opacity:0;transition:opacity .45s ease}
-.card img.on{opacity:1}
-.card.is-video::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%, transparent 40%, rgba(0,0,0,.15) 100%);pointer-events:none}
-.card.is-video::before{content:"▶";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font-size:18px;opacity:.7;pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.card img,.card video{display:block;height:100%;width:auto;max-width:none;opacity:0;transition:opacity .45s ease}
+.card img.on,.card video.on{opacity:1}
 @keyframes drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .status{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(var(--text-rgb),.4);pointer-events:none}
 .lb{position:fixed;inset:0;background:rgba(21,22,27,.92);z-index:20;display:none;align-items:center;justify-content:center;padding:2em}
@@ -121,15 +119,29 @@ function isVideo(block){
 }
 function cardFor(entry){
   const b = document.createElement("button");
-  b.className = "card" + (entry.video ? " is-video" : "");
+  b.className = "card";
   b.type = "button";
   b.setAttribute("aria-label", entry.title || "Work");
   const ratio = Math.max(0.62, Math.min(1.85, (entry.w || 3) / (entry.h || 4)));
   b.style.aspectRatio = String(ratio);
-  const img = document.createElement("img");
-  img.loading = "lazy"; img.decoding = "async"; img.alt = entry.title || ""; img.src = entry.thumb;
-  img.addEventListener("load", () => img.classList.add("on"));
-  b.appendChild(img);
+  if (entry.video) {
+    const vid = document.createElement("video");
+    vid.muted = true;
+    vid.loop = true;
+    vid.playsInline = true;
+    vid.autoplay = true;
+    vid.preload = "metadata";
+    vid.poster = entry.thumb;
+    vid.src = entry.video;
+    vid.addEventListener("loadeddata", () => vid.classList.add("on"));
+    vid.addEventListener("canplay", () => { vid.play().catch(() => {}); });
+    b.appendChild(vid);
+  } else {
+    const img = document.createElement("img");
+    img.loading = "lazy"; img.decoding = "async"; img.alt = entry.title || ""; img.src = entry.thumb;
+    img.addEventListener("load", () => img.classList.add("on"));
+    b.appendChild(img);
+  }
   b.addEventListener("click", () => open(entry.i));
   return b;
 }
@@ -189,6 +201,7 @@ function open(i){
     lbv.style.display = "block";
     lbv.src = it.video;
     lbv.poster = it.large || it.thumb;
+    lbv.muted = false;
     lbv.play().catch(() => {});
   } else {
     lbv.style.display = "none";
